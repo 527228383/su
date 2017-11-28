@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zl.dao.EmployeeDao">
+
+	<!-- public String getEmployeeId(String positionId) -->
+	<!-- 根据职位获取员工姓名 -->
+	<select id="getEmployeeId" parameterType="java.lang.String"
+			resultType="java.lang.String">
+		SELECT 
+			e.id 
+		FROM 
+			employee e 
+		LEFT JOIN 
+			tbl_position p
+		ON 
+			e.emp_position_id = p.id 
+		WHERE 
+			p.pos_name = #{positionName}
+		AND
+			emp_del_mark = 1
+		 ORDER BY RAND()
+		 LIMIT 1 		
+	</select>
+
+	<!-- public int getEmpRows(Query query) -->
+	<!-- 查询员工信息总条数 -->
+	<select id="getEmpRows" parameterType="com.zl.util.Query" 
+		resultType="java.lang.Integer">
+		select count(1) from employee e left join tbl_position p on e.emp_position_id = p.id
+		<where>
+			e.emp_del_mark = 1
+			<if test="emp_id != null and emp_id != ''">
+				and e.id like CONCAT(CONCAT('%',#{emp_id}),'%')
+			</if>
+			<if test="emp_name != null and emp_name != ''">
+				and e.emp_name like CONCAT(CONCAT('%',#{emp_name}),'%')
+			</if>
+			<if test="pos_name != null and pos_name != ''">
+				and p.pos_name = #{pos_name}
+			</if>
+			<if test="startDate != null">
+				and e.emp_hiredate >= #{startDate}
+			</if>
+			<if test="endDate != null">
+				and e.emp_hiredate &lt;= #{endDate}
+			</if>
+		</where>	
+	</select>
+
+	<!-- public EmployeeDto getEmployeeByNameAndPwd(EmployeeDto employeeDto) -->
+	<!-- 员工登录 -->
+	<select id="getEmployeeByNameAndPwd" parameterType="employeeDto" resultType="com.zl.dto.EmployeeDto">
+		SELECT
+			t4.id,
+			t4.emp_name,
+			t4.emp_pwd,
+			t4.emp_gender,
+			t4.emp_age,
+			t4.emp_birthday,
+			t4.emp_id_card,
+			t4.emp_address,
+			t4.emp_hiredate,
+			t4.emp_position_id,
+			t4.position_name,
+			t4.emp_province_id,
+			t4.province_name,
+			t4.emp_city_id,
+			t4.city_name,
+			t4.emp_leader_id,
+			e5.emp_name leader_name,
+			t4.emp_add_people,
+			t4.add_people_name,
+			t4.emp_add_date,
+			t4.emp_up_people,
+			t4.up_people_name,
+			t4.emp_up_date,
+			t4.emp_del_people,
+			t4.del_people_name,
+			t4.emp_del_date,
+			t4.emp_del_mark
+		FROM
+		(
+			SELECT
+					t3.id,
+					t3.emp_name,
+					t3.emp_pwd,
+					t3.emp_gender,
+					t3.emp_age,
+					t3.emp_birthday,
+					t3.emp_id_card,
+					t3.emp_address,
+					t3.emp_hiredate,
+					t3.emp_position_id,
+					t3.pos_name position_name,
+					t3.emp_province_id,
+					t3.pname province_name,
+					t3.emp_city_id,
+					t3.city_name,
+					t3.emp_leader_id,
+					t3.emp_add_people,
+					t3.add_people_name,
+					t3.emp_add_date,
+					t3.emp_up_people,
+					t3.up_people_name,
+					t3.emp_up_date,
+					t3.emp_del_people,
+					e4.emp_name del_people_name,
+					t3.emp_del_date,
+					t3.emp_del_mark
+				FROM
+				(
+					SELECT
+						t2.id,
+						t2.emp_name,
+						t2.emp_pwd,
+						t2.emp_gender,
+						t2.emp_age,
+						t2.emp_birthday,
+						t2.emp_id_card,
+						t2.emp_address,
+						t2.emp_hiredate,
+						t2.emp_position_id,
+						t2.pos_name,
+						t2.emp_province_id,
+						t2.pname,
+						t2.emp_city_id,
+						t2.city_name,
+						t2.emp_leader_id,
+						t2.emp_add_people,
+						t2.add_people_name,
+						t2.emp_add_date,
+						t2.emp_up_people,
+						e3.emp_name up_people_name,
+						t2.emp_up_date,
+						t2.emp_del_people,
+						t2.emp_del_date,
+						t2.emp_del_mark
+					FROM
+					(
+						SELECT 
+							t1.id,
+							t1.emp_name,
+							t1.emp_pwd,
+							t1.emp_gender,
+							t1.emp_age,
+							t1.emp_birthday,
+							t1.emp_id_card,
+							t1.emp_address,
+							t1.emp_hiredate,
+							t1.emp_position_id,
+							t1.pos_name,
+							t1.emp_province_id,
+							t1.pname,
+							t1.emp_city_id,
+							t1.city_name,
+							t1.emp_leader_id,
+							t1.emp_add_people,
+							e2.emp_name add_people_name,
+							t1.emp_add_date,
+							t1.emp_up_people,
+							t1.emp_up_date,
+							t1.emp_del_people,
+							t1.emp_del_date,
+							t1.emp_del_mark
+						FROM
+						(
+							SELECT 
+								e1.id,
+								e1.emp_name,
+								e1.emp_pwd,
+								e1.emp_gender,
+								e1.emp_age,
+								e1.emp_birthday,
+								e1.emp_id_card,
+								e1.emp_address,
+								e1.emp_hiredate,
+								e1.emp_position_id,
+								pt.pos_name,
+								e1.emp_province_id,
+								pv.pname,
+								e1.emp_city_id,
+								c.city_name,
+								e1.emp_leader_id,
+								e1.emp_add_people,
+								e1.emp_add_date,
+								e1.emp_up_people,
+								e1.emp_up_date,
+								e1.emp_del_people,
+								e1.emp_del_date,
+								e1.emp_del_mark
+							FROM
+								employee e1
+							LEFT JOIN
+								tbl_position pt
+							ON
+								e1.emp_position_id = pt.id
+							LEFT JOIN
+								province pv
+							ON
+								e1.emp_province_id = pv.pcode
+							LEFT JOIN
+								city c
+							ON
+								e1.emp_city_id = c.city_code
+							WHERE
+								e1.emp_name = #{emp_name}
+							AND
+								e1.emp_pwd = #{emp_pwd}
+							AND
+								e1.emp_del_mark = 1
+						) t1
+						LEFT JOIN
+							employee e2
+						ON
+							t1.emp_add_people = e2.id
+					) t2
+					LEFT JOIN
+						employee e3
+					ON
+						t2.emp_up_people = e3.id
+				) t3
+				LEFT JOIN
+					employee e4
+				ON
+					t3.emp_del_people = e4.id
+		) t4
+		LEFT JOIN
+			employee e5
+		ON
+			t4.emp_leader_id = e5.id
+	</select>
+	
+	<!-- public List<EmployeeDao> listEmployeeByFenYe(PageUtil pageUtil) -->
+	<!-- 查询员工列表 -->
+	<select id="listEmployeeByFenYe" parameterType="com.zl.util.PageUtil"
+		resultType="com.zl.dto.EmployeeDto">
+		SELECT
+			t4.id,
+			t4.emp_name,
+			t4.emp_pwd,
+			t4.emp_gender,
+			t4.emp_age,
+			t4.emp_birthday,
+			t4.emp_id_card,
+			t4.emp_address,
+			t4.emp_hiredate,
+			t4.emp_position_id,
+			t4.position_name,
+			t4.emp_province_id,
+			t4.province_name,
+			t4.emp_city_id,
+			t4.city_name,
+			t4.emp_leader_id,
+			e5.emp_name leader_name,
+			t4.emp_add_people,
+			t4.add_people_name,
+			t4.emp_add_date,
+			t4.emp_up_people,
+			t4.up_people_name,
+			t4.emp_up_date,
+			t4.emp_del_people,
+			t4.del_people_name,
+			t4.emp_del_date,
+			t4.emp_del_mark
+		FROM
+		(
+			SELECT
+					t3.id,
+					t3.emp_name,
+					t3.emp_pwd,
+					t3.emp_gender,
+					t3.emp_age,
+					t3.emp_birthday,
+					t3.emp_id_card,
+					t3.emp_address,
+					t3.emp_hiredate,
+					t3.emp_position_id,
+					t3.pos_name position_name,
+					t3.emp_province_id,
+					t3.pname province_name,
+					t3.emp_city_id,
+					t3.city_name,
+					t3.emp_leader_id,
+					t3.emp_add_people,
+					t3.add_people_name,
+					t3.emp_add_date,
+					t3.emp_up_people,
+					t3.up_people_name,
+					t3.emp_up_date,
+					t3.emp_del_people,
+					e4.emp_name del_people_name,
+					t3.emp_del_date,
+					t3.emp_del_mark
+				FROM
+				(
+					SELECT
+						t2.id,
+						t2.emp_name,
+						t2.emp_pwd,
+						t2.emp_gender,
+						t2.emp_age,
+						t2.emp_birthday,
+						t2.emp_id_card,
+						t2.emp_address,
+						t2.emp_hiredate,
+						t2.emp_position_id,
+						t2.pos_name,
+						t2.emp_province_id,
+						t2.pname,
+						t2.emp_city_id,
+						t2.city_name,
+						t2.emp_leader_id,
+						t2.emp_add_people,
+						t2.add_people_name,
+						t2.emp_add_date,
+						t2.emp_up_people,
+						e3.emp_name up_people_name,
+						t2.emp_up_date,
+						t2.emp_del_people,
+						t2.emp_del_date,
+						t2.emp_del_mark
+					FROM
+					(
+						SELECT 
+							t1.id,
+							t1.emp_name,
+							t1.emp_pwd,
+							t1.emp_gender,
+							t1.emp_age,
+							t1.emp_birthday,
+							t1.emp_id_card,
+							t1.emp_address,
+							t1.emp_hiredate,
+							t1.emp_position_id,
+							t1.pos_name,
+							t1.emp_province_id,
+							t1.pname,
+							t1.emp_city_id,
+							t1.city_name,
+							t1.emp_leader_id,
+							t1.emp_add_people,
+							e2.emp_name add_people_name,
+							t1.emp_add_date,
+							t1.emp_up_people,
+							t1.emp_up_date,
+							t1.emp_del_people,
+							t1.emp_del_date,
+							t1.emp_del_mark
+						FROM
+						(
+							SELECT 
+								e1.id,
+								e1.emp_name,
+								e1.emp_pwd,
+								e1.emp_gender,
+								e1.emp_age,
+								e1.emp_birthday,
+								e1.emp_id_card,
+								e1.emp_address,
+								e1.emp_hiredate,
+								e1.emp_position_id,
+								pt.pos_name,
+								e1.emp_province_id,
+								pv.pname,
+								e1.emp_city_id,
+								c.city_name,
+								e1.emp_leader_id,
+								e1.emp_add_people,
+								e1.emp_add_date,
+								e1.emp_up_people,
+								e1.emp_up_date,
+								e1.emp_del_people,
+								e1.emp_del_date,
+								e1.emp_del_mark
+							FROM
+								employee e1
+							LEFT JOIN
+								tbl_position pt
+							ON
+								e1.emp_position_id = pt.id
+							LEFT JOIN
+								province pv
+							ON
+								e1.emp_province_id = pv.pcode
+							LEFT JOIN
+								city c
+							ON
+								e1.emp_city_id = c.city_code
+							WHERE
+								e1.emp_del_mark = 1
+						) t1
+						LEFT JOIN
+							employee e2
+						ON
+							t1.emp_add_people = e2.id
+					) t2
+					LEFT JOIN
+						employee e3
+					ON
+						t2.emp_up_people = e3.id
+				) t3
+				LEFT JOIN
+					employee e4
+				ON
+					t3.emp_del_people = e4.id
+		) t4
+		LEFT JOIN
+			employee e5
+		ON
+			t4.emp_leader_id = e5.id
+		<where>
+			<if test="query.emp_id != null and query.emp_id != ''">
+				and t4.id like CONCAT(CONCAT('%',#{query.emp_id}),'%')
+			</if>
+			<if test="query.emp_name != null and query.emp_name != ''">
+				and t4.emp_name like CONCAT(CONCAT('%',#{query.emp_name}),'%')
+			</if>
+			<if test="query.pos_name != null and query.pos_name != ''">
+				and t4.position_name = #{query.pos_name}
+			</if>
+			<if test="query.startDate != null">
+				and t4.emp_hiredate >= #{query.startDate}
+			</if>
+			<if test="query.endDate != null">
+				and t4.emp_hiredate &lt;= #{query.endDate}
+			</if>
+		</where>
+		LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	<!-- public int insertEmployee(EmployeeDto employeeDto) -->
+	<!-- 添加员工 -->
+	<insert id="insertEmployee" parameterType="com.zl.dto.EmployeeDto">
+		INSERT INTO 
+			employee 
+		( 
+			emp_name, 
+			emp_pwd, 
+			emp_gender, 
+			emp_age, 
+			emp_birthday, 
+			emp_id_card,
+			emp_address,
+			emp_hiredate, 
+			emp_position_id, 
+			emp_province_id, 
+			emp_city_id, 
+			emp_leader_id, 
+			emp_add_people, 
+			emp_add_date
+		)
+		VALUES 
+		( 
+			#{emp_name}, 
+			#{emp_pwd}, 
+			#{emp_gender}, 
+			#{emp_age}, 
+			#{emp_birthday}, 
+			#{emp_id_card},
+			#{emp_address}, 
+			#{emp_hiredate}, 
+			#{emp_position_id}, 
+			#{emp_province_id}, 
+			#{emp_city_id}, 
+			#{emp_leader_id}, 
+			#{emp_add_people}, 
+			#{emp_add_date}
+		)
+	</insert>
+	
+	<!-- public int deleteEmployee(List<String> ids) -->
+	<!-- 删除员工 -->
+	<update id="deleteEmployee" parameterType="java.util.ArrayList">
+		update employee set emp_del_mark = 0 where id in
+		<foreach collection="list" item="id" open="(" close=")" separator=",">
+			#{id}
+		</foreach>
+	</update>
+	
+	<!-- public int updateEmployee(EmployeeDto employeeDto) -->
+	<!-- 更新员工信息 -->
+	<update id="updateEmployee" parameterType="com.zl.dto.EmployeeDto">
+		update employee e
+		<set>
+			e.emp_position_id = #{emp_position_id},
+			e.emp_address = #{emp_address},
+			e.emp_hiredate = #{emp_hiredate},
+			e.emp_province_id = #{emp_province_id},
+			e.emp_city_id = #{emp_city_id}
+		</set>
+		where 
+			e.id = #{id}
+	</update>
+	
+	<!-- public List<PositionDto> listPosition() -->
+	<!-- 获取职位列表 -->
+	<select id="listPosition" parameterType="com.zl.dto.PositionDto" 
+		resultType="com.zl.dto.PositionDto">
+		select id, pos_name from tbl_position
+	</select>
+	
+	<!-- public EmployeeDto getEmployeeById(Integer id) -->
+	<!-- 根据 id 查询员工信息 -->
+	<select id="getEmployeeById" parameterType="java.lang.Integer" 
+		resultType="com.zl.dto.EmployeeDto">
+		SELECT
+			t4.id,
+			t4.emp_name,
+			t4.emp_pwd,
+			t4.emp_gender,
+			t4.emp_age,
+			t4.emp_birthday,
+			t4.emp_id_card,
+			t4.emp_address,
+			t4.emp_hiredate,
+			t4.emp_position_id,
+			t4.position_name,
+			t4.emp_province_id,
+			t4.province_name,
+			t4.emp_city_id,
+			t4.city_name,
+			t4.emp_leader_id,
+			e5.emp_name leader_name,
+			t4.emp_add_people,
+			t4.add_people_name,
+			t4.emp_add_date,
+			t4.emp_up_people,
+			t4.up_people_name,
+			t4.emp_up_date,
+			t4.emp_del_people,
+			t4.del_people_name,
+			t4.emp_del_date,
+			t4.emp_del_mark
+		FROM
+		(
+			SELECT
+					t3.id,
+					t3.emp_name,
+					t3.emp_pwd,
+					t3.emp_gender,
+					t3.emp_age,
+					t3.emp_birthday,
+					t3.emp_id_card,
+					t3.emp_address,
+					t3.emp_hiredate,
+					t3.emp_position_id,
+					t3.pos_name position_name,
+					t3.emp_province_id,
+					t3.pname province_name,
+					t3.emp_city_id,
+					t3.city_name,
+					t3.emp_leader_id,
+					t3.emp_add_people,
+					t3.add_people_name,
+					t3.emp_add_date,
+					t3.emp_up_people,
+					t3.up_people_name,
+					t3.emp_up_date,
+					t3.emp_del_people,
+					e4.emp_name del_people_name,
+					t3.emp_del_date,
+					t3.emp_del_mark
+				FROM
+				(
+					SELECT
+						t2.id,
+						t2.emp_name,
+						t2.emp_pwd,
+						t2.emp_gender,
+						t2.emp_age,
+						t2.emp_birthday,
+						t2.emp_id_card,
+						t2.emp_address,
+						t2.emp_hiredate,
+						t2.emp_position_id,
+						t2.pos_name,
+						t2.emp_province_id,
+						t2.pname,
+						t2.emp_city_id,
+						t2.city_name,
+						t2.emp_leader_id,
+						t2.emp_add_people,
+						t2.add_people_name,
+						t2.emp_add_date,
+						t2.emp_up_people,
+						e3.emp_name up_people_name,
+						t2.emp_up_date,
+						t2.emp_del_people,
+						t2.emp_del_date,
+						t2.emp_del_mark
+					FROM
+					(
+						SELECT 
+							t1.id,
+							t1.emp_name,
+							t1.emp_pwd,
+							t1.emp_gender,
+							t1.emp_age,
+							t1.emp_birthday,
+							t1.emp_id_card,
+							t1.emp_address,
+							t1.emp_hiredate,
+							t1.emp_position_id,
+							t1.pos_name,
+							t1.emp_province_id,
+							t1.pname,
+							t1.emp_city_id,
+							t1.city_name,
+							t1.emp_leader_id,
+							t1.emp_add_people,
+							e2.emp_name add_people_name,
+							t1.emp_add_date,
+							t1.emp_up_people,
+							t1.emp_up_date,
+							t1.emp_del_people,
+							t1.emp_del_date,
+							t1.emp_del_mark
+						FROM
+						(
+							SELECT 
+								e1.id,
+								e1.emp_name,
+								e1.emp_pwd,
+								e1.emp_gender,
+								e1.emp_age,
+								e1.emp_birthday,
+								e1.emp_id_card,
+								e1.emp_address,
+								e1.emp_hiredate,
+								e1.emp_position_id,
+								pt.pos_name,
+								e1.emp_province_id,
+								pv.pname,
+								e1.emp_city_id,
+								c.city_name,
+								e1.emp_leader_id,
+								e1.emp_add_people,
+								e1.emp_add_date,
+								e1.emp_up_people,
+								e1.emp_up_date,
+								e1.emp_del_people,
+								e1.emp_del_date,
+								e1.emp_del_mark
+							FROM
+								employee e1
+							LEFT JOIN
+								tbl_position pt
+							ON
+								e1.emp_position_id = pt.id
+							LEFT JOIN
+								province pv
+							ON
+								e1.emp_province_id = pv.pcode
+							LEFT JOIN
+								city c
+							ON
+								e1.emp_city_id = c.city_code
+							WHERE
+								e1.id = #{id}
+							AND
+								e1.emp_del_mark = 1
+						) t1
+						LEFT JOIN
+							employee e2
+						ON
+							t1.emp_add_people = e2.id
+					) t2
+					LEFT JOIN
+						employee e3
+					ON
+						t2.emp_up_people = e3.id
+				) t3
+				LEFT JOIN
+					employee e4
+				ON
+					t3.emp_del_people = e4.id
+		) t4
+		LEFT JOIN
+			employee e5
+		ON
+			t4.emp_leader_id = e5.id
+	</select>
+	
+</mapper>

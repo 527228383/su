@@ -1,0 +1,536 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zl.dao.InsureDao">
+	<!-- 用户登录 -->
+	<select id="insureLogin" parameterType="java.lang.String" resultType="com.zl.dto.InsureDto">
+		select i.id,
+			   i.ins_name,
+			   i.ins_pwd,
+			   i.ins_gender,
+			   i.ins_id_card,
+			   i.ins_tel,
+			   i.ins_email,
+			   i.ins_city,
+			   i.ins_pic,
+			   i.ins_reg_date,
+			   i.ins_up_date
+		 from 
+		 	insure i 
+		 where 
+		 	 ins_tel=#{ins_tel} 
+		 and 
+		 	 ins_pwd=#{ins_pwd}
+	</select>
+	<!-- 用户注册 (尚奔科)-->
+	
+	<insert id="insureRegister" parameterType="com.zl.dto.InsureDto">
+		<selectKey order="BEFORE" keyProperty="id" resultType="java.lang.String">
+			select uuid() from dual;
+		</selectKey>
+		insert into insure(id,ins_pwd,ins_tel,ins_email) values(#{id},#{ins_pwd},#{ins_tel},#{ins_email})
+	</insert>
+	<!-- 用户注册时给用户创建账户 -->
+	<insert id="createaccount" parameterType="com.zl.dto.AccountDto">
+		insert into account values(uuid(),0.0,10,#{ins_id})
+	</insert>
+	<!-- 用户注册时验证电话号码是否被注册 （尚奔科）-->
+	<select id="selecttel" parameterType="java.lang.String" resultType="com.zl.dto.InsureDto">
+		select i.id,
+			   i.ins_name,
+			   i.ins_pwd,
+			   i.ins_gender,
+			   i.ins_id_card,
+			   i.ins_tel,
+			   i.ins_email,
+			   i.ins_city,
+			   i.ins_pic,
+			   i.ins_reg_date,
+			   i.ins_up_date
+		 from 
+		 	insure i 
+		 where 
+		 	 ins_tel=#{tel} 
+		 
+	</select>
+	<!-- 修改投保人信息   (彭杰)-->
+	<update id="updateInsure" parameterType="com.zl.dto.InsureDto">
+		update insure set 
+				ins_name=#{ins_name},
+				ins_tel=#{ins_tel},
+				ins_id_card=#{ins_id_card},
+				ins_email=#{ins_email}
+		where id=#{id}
+	</update>
+	
+	<!-- 根据身份证号码查询被保人 (彭杰)-->
+	<select id="selectAssurer" parameterType="java.lang.String" resultType="com.zl.dto.AssurerDto">
+		SELECT
+			a.ass_add_date,
+			a.ass_city,
+			a.ass_email,
+			a.ass_gender,
+			a.ass_id_card,
+			a.ass_name,
+			a.ass_tel,
+			a.id
+		FROM
+			assurer a
+		where 
+			a.ass_id_card=#{ass_id_card}
+	</select>
+	
+
+	<!-- 根据用户id查询用户的账户（尚奔科） -->
+	<select id="selectaccount" parameterType="java.lang.String" resultType="com.zl.dto.AccountDto">
+		select a.id,a.balance,a.discount,a.ins_id from account a where a.ins_id=#{ins_id}
+	</select>
+	
+	<!-- 查询订单表 （尚奔科）-->
+	<resultMap type="com.zl.dto.OrderDto" id="tr">
+		<result column="id" property="id"/>
+		<result column="d_add_date" property="d_add_date"/>
+		<result column="d_coverage" property="d_coverage"/>
+		<result column="d_state_id" property="d_state_id"/>
+		<association property="productDto" javaType="com.zl.dto.ProductDto">
+			<result column="pro_name" property="pro_name"/>
+			<result column="pro_time" property="pro_time"/>
+		</association>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<result column="ass_name" property="ass_name"/>
+			<result column="city_name" property="ass_city_name"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectOrder" parameterType="java.util.Map" resultMap="tr">
+		SELECT
+			tor.id,tor.d_add_date,tor.d_coverage,tor.d_state_id,
+			pd.pro_name,pd.pro_time,
+			ar.ass_name,c.city_name
+		FROM
+			tbl_order tor,
+			product pd,
+			assurer ar,
+			city c
+		WHERE
+			pd.id = tor.d_pro_id
+			AND tor.d_ins_id = #{ins_id}
+			AND tor.d_del_mark = 1
+			and tor.d_ass_id=ar.id
+			and ar.ass_city=c.city_code
+			<!-- 个人中心查询标记 -->
+			<if test="type!=null and type!=''">
+				and tor.d_state_id = #{type}
+			</if>
+	
+			<if test="query!=null">
+				<if test="query.typeid=='1'.toString()">
+					and tor.d_state_id = 1
+					and tor.d_insured_amount&lt;=500000
+				</if>
+				<if test="query.typeid=='2'.toString()">
+					and tor.d_state_id = 1
+					and tor.d_insured_amount>500000
+				</if>
+				<if test="query.typeid=='3'.toString()">
+					and tor.d_state_id = 2
+				</if>
+				<if test="query.typeid=='4'.toString()">
+					and tor.d_state_id = 10
+				</if>
+				<if test="query.pro_name!=null and query.pro_name!=''">
+					and (pd.pro_name like concat(concat('%',#{query.pro_name}),'%') or ar.ass_name =#{query.pro_name} or
+						tor.id = #{query.pro_name})
+				</if>
+				<if test="query.time_mark=='1'.toString()">
+					and tor.d_add_date>=DATE_SUB(CURDATE(), INTERVAL 3 day)
+				</if>
+				<if test="query.time_mark=='2'.toString()">
+					 and tor.d_add_date&lt;DATE_SUB(CURDATE(), INTERVAL 3 day)
+				</if>
+			</if>
+
+			ORDER BY tor.d_add_date
+			 LIMIT #{pageutil.startNum},#{pageutil.pageSize} 
+			
+	</select>
+	
+
+	<!-- 查询保单(尚奔科)，生效中，待评论，待续保 -->
+	<resultMap type="com.zl.dto.PolicyDto" id="tv">
+		<result column="id" property="id"/>
+		<result column="b_effect_date" property="b_effect_date"/>
+		<result column="b_lose_date" property="b_lose_date"/>
+		<result column="b_coverage" property="b_coverage"/>
+		<result column="b_com_mark" property="b_com_mark"/>
+		<result column="b_state_id" property="b_state_id"/>
+		<association property="productDto" javaType="com.zl.dto.ProductDto">
+			<result column="pro_name" property="pro_name"/>
+			<result column="pro_time" property="pro_time"/>
+		</association>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<result column="ass_name" property="ass_name"/>
+			<result column="city_name" property="ass_city_name"/>
+		</association>
+	</resultMap>
+	
+	<select id="selectcomment" parameterType="java.util.Map" resultMap="tv">
+		SELECT
+			p.id,
+			p.b_effect_date,
+			p.b_coverage,
+			p.b_com_mark,
+			DATE_ADD(p.b_effect_date,INTERVAL pd.pro_time YEAR) AS b_lose_date,
+			p.b_state_id,
+			pd.pro_name,pd.pro_time,
+			ar.ass_name,
+			c.city_name
+			
+		FROM
+			policy p,
+			product pd,
+			assurer ar,
+			city c
+		WHERE
+			
+			pd.id = p.b_pro_id
+			<if test="type=='1'.toString()">
+				AND p.b_state_id in(3,5,6,7,8,9)
+			</if>
+			<if test="type=='2'.toString()">
+				AND p.b_state_id = 4
+			</if>
+			<if test="type=='3'.toString()">
+				AND p.b_com_mark=1
+			</if>
+			<if test="type=='4'.toString()">
+				AND p.b_state_id between 5 and 9
+			</if>
+			AND p.b_ins_id = #{ins_id}
+			and p.b_ass_id=ar.id
+			and ar.ass_city=c.city_code
+			<if test="condition!=null and condition!=''">
+					and (pd.pro_name like concat(concat('%',#{condition}),'%') or ar.ass_name =#{condition} or
+					p.id = #{condition})
+			</if>
+			ORDER BY b_effect_date
+			LIMIT #{pageutil.startNum},#{pageutil.pageSize}
+	</select>
+	
+	
+	<!-- 查询待续保保单、待评论保单数量 -->
+	<select id="continuepay" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from policy p,product pd,assurer ar
+		 where p.b_ins_id=#{ins_id}
+		 	and pd.id = p.b_pro_id
+		 	and p.b_ass_id=ar.id
+		 	<!-- 个人中心首页展示数据时的标识项 -->
+			<if test="typeid=='1'.toString()">
+				and p.b_com_mark=1
+			</if>
+			<if test="typeid=='2'.toString()">
+				and p.b_state_id=4
+			</if>
+			
+			<if test="type=='1'.toString()">
+				AND p.b_state_id in (3,5,6,7,8,9)
+			</if>
+			<if test="type=='2'.toString()">
+				AND p.b_state_id = 4
+			</if>
+			<if test="type=='3'.toString()">
+				AND p.b_com_mark=1
+			</if>
+			<if test="type=='4'.toString()">
+				AND p.b_state_id between 5 and 9
+			</if>
+			<if test="condition!=null and condition!=''">
+					and (pd.pro_name like concat(concat('%',#{condition}),'%') or ar.ass_name =#{condition} or
+					p.id = #{condition})
+			</if>
+		
+	</select>
+	
+	<!-- 查询待支付订单数量 -->
+	<select id="nopaynum" parameterType="java.util.Map" resultType="java.lang.Integer">
+		select count(1) from tbl_order tor,product pd,assurer ar
+		 where tor.d_ins_id=#{ins_id}
+		 and pd.id = tor.d_pro_id
+		 and tor.d_ass_id=ar.id
+		 and tor.d_del_mark=1
+		 <!-- 个人中心首页展示数据 时的标记-->
+		<if test="stateid!=null and stateid!=''">
+			and tor.d_state_id=#{stateid}
+		</if>
+		 
+		<if test="query!=null">
+			<if test="query.typeid=='1'.toString()">
+				and tor.d_state_id = 1
+				and tor.d_insured_amount&lt;=500000
+			</if>
+			<if test="query.typeid=='2'.toString()">
+				and tor.d_state_id = 1
+				and tor.d_insured_amount>500000
+			</if>
+			<if test="query.typeid=='3'.toString()">
+				and tor.d_state_id = 2
+			</if>
+			<if test="query.typeid=='4'.toString()">
+				and tor.d_state_id = 10
+			</if>
+			<if test="query.pro_name!=null and query.pro_name!=''">
+				and (pd.pro_name like concat(concat('%',#{query.pro_name}),'%') or ar.ass_name =#{query.pro_name} or
+					tor.id = #{query.pro_name})
+			</if>
+			<if test="query.time_mark=='1'.toString()">
+				and tor.d_add_date>=DATE_SUB(CURDATE(), INTERVAL 3 day)
+			</if>
+			<if test="query.time_mark=='2'.toString()">
+				 and tor.d_add_date&lt;DATE_SUB(CURDATE(), INTERVAL 3 day)
+			</if>
+		</if>
+		
+	</select>
+	
+
+	<!-- 添加被保人信息 (彭杰)-->
+	<insert id="addAssurer" parameterType="com.zl.dto.AssurerDto">
+		<selectKey keyProperty="id" order="BEFORE" resultType="java.lang.String">
+			select UUID() from dual
+		</selectKey>
+		insert into assurer(id,
+							ass_name,
+							ass_id_card,
+							ass_tel,
+							ass_email,
+							ass_city,
+							ass_add_date)
+		values(#{id},
+			   #{ass_name},
+			   #{ass_id_card},
+			   #{ass_tel},
+			   #{ass_email},
+			   #{ass_city},
+			   sysdate())
+	</insert>
+	
+	<!-- 添加订单信息 (彭杰)-->
+	<insert id="addOrder" parameterType="com.zl.dto.OrderDto">
+		<selectKey keyProperty="id" order="BEFORE" resultType="java.lang.String">
+			select UUID() from dual
+		</selectKey>
+		insert into tbl_order(id,
+						  d_ins_id,
+						  d_ass_id,
+						  d_pro_id,
+						  d_add_date,
+						  d_state_id,
+						  d_del_mark,
+						  d_coverage,
+						  d_insured_amount)
+		values(#{id},
+			   #{insureDto.id},
+			   #{assurerDto.id},
+			   #{d_pro_id},
+			   sysdate(),
+			   1,
+			   1,
+			   #{d_coverage},
+			   #{d_insured_amount})
+	</insert>
+	
+	<!-- 根据用户ID查询优惠券(彭杰) -->
+	<select id="selectDiscount" parameterType="java.lang.String" resultType="java.lang.Double">
+	   select discount FROM account where ins_id=#{ins_id}
+	</select>
+	
+	<!-- 支付修改钱包金额(彭杰) -->
+	<update id="updateAccount" parameterType="java.util.HashMap">
+        update account set 
+        
+            <if test="money==1">
+	            <if test="quo.coverage-discount &lt;=0">
+	               discount=0
+	            </if>
+	            
+	            <if test="quo.coverage-discount>0">
+	               balance=balance-(#{quo.coverage}-#{discount}),discount=0<!-- 保费减去优惠券再用余额减去剩下的-->
+	            </if>
+            </if>
+            
+            <if test="money==2">
+                 balance=balance-#{balance}
+            </if>
+            <if test="money==3">
+                 balance=balance+#{balance}
+            </if>
+            
+        where 
+            ins_id=#{ins_id}
+            <if test="balance>0">
+                 and balance>balance-#{balance}
+            </if>
+        and
+            balance>#{quo.coverage}-#{discount}
+    </update>
+	
+	<!-- 添加保单信息 (彭杰)-->
+	<insert id="addPolicy" parameterType="java.util.ArrayList">
+        INSERT INTO policy (
+		    id,
+		    b_ins_id,
+		    b_ass_id,
+		    b_pro_id,
+		    b_insured_amount,
+		    b_coverage,
+		    b_effect_date,
+		    b_state_id,
+		    b_com_mark
+		) SELECT
+        UUID(),
+        d_ins_id AS b_ins_id,
+        d_ass_id AS b_ass_id,
+        d_pro_id AS b_pro_id,
+        d_insured_amount AS b_insured_amount,
+        d_coverage AS b_coverage,
+        SYSDATE(),
+        3,
+        1
+		FROM
+		    tbl_order
+		WHERE
+		    id in 
+		    <foreach collection="list" item="order_id" open="(" close=")" separator=",">
+                #{order_id}
+            </foreach>
+    </insert>
+	
+	<!-- xu bao xiu gai bao dan -->
+	<update id="updatepolicybyid" parameterType="java.util.Map">
+		update policy p 
+			set p.b_effect_date=sysdate(),
+				p.b_state_id=3
+			where p.id=#{id}
+	</update>
+	
+	<!-- 修改订单状态（删除、核实），并且增加对应时间 -->
+	<update id="update_dd" parameterType="java.util.Map">
+		update tbl_order tor	
+			<trim prefix="set" suffixOverrides=",">
+				<!-- 删除未支付订单 -->
+				<if test="typeid=='1'.toString()">
+					tor.d_del_mark=0,
+				</if>
+			
+				<!-- 支付后生效（删除订单，增加支付时间） -->
+				<if test="typeid=='2'.toString()">
+					tor.d_del_mark=0,
+					tor.d_pay_date=sysdate(),
+				</if>
+				<!-- 支付后未生效（状态已经改变为待核实，增加支付时间） -->
+				<if test="typeid=='3'.toString()">
+					tor.d_state_id=2,
+					tor.d_pay_date=sysdate(),
+				</if>		
+				</trim>
+			where tor.id in
+			<foreach collection="updateid" item="n" open="(" close=")" separator=",">
+				#{n}
+			</foreach>
+	</update>
+
+	
+	<!-- 修改订单状态 -->
+	<update id="update_policy" parameterType="java.util.Map">
+		update policy p
+		<set>
+			<if test="stateid!=null and stateid!=''">
+				p.b_state_id=#{stateid}
+			</if>
+			<if test="com_mark!=null and com_mark!=''">
+				p.b_com_mark=#{com_mark}
+			</if>
+		</set>
+		where p.id=#{id}
+	</update>
+
+	<!-- 评论 -->
+	<insert id="addComment" parameterType="com.zl.dto.CommentDto">
+		INSERT INTO comment(
+					id,
+					product_id,
+					ins_id,
+					content,
+					com_date,
+					grade
+				)values(
+					UUID(),
+					#{product_id},
+					#{ins_id},
+					#{content},
+					sysdate(),
+					#{grade}
+				)
+	</insert>
+
+	<!-- public int insertClaimDetails(ClaimDetailsDto claimDetails) -->
+	<!-- 添加理赔信息 -->
+	<insert id="insertClaimDetails" parameterType="com.zl.dto.ClaimDetailsDto">
+		<selectKey order="BEFORE" keyProperty="id" resultType="java.lang.String">
+			select UUID() from dual
+		</selectKey>
+		INSERT INTO 
+			claim_details 
+		(
+			id, 
+			ins_id, 
+			ass_id, 
+			pol_id
+		)
+		values
+		(
+			#{id},
+			#{insureDto.id},
+			#{assurerDto.id},
+			#{pol_id}
+		)
+	</insert>
+	
+	<!-- public int updateProcessId(ClaimDetailsDto claimDetails) -->
+	<!-- 添加流程实例 id  -->
+	<update id="updateProcessId" parameterType="com.zl.dto.ClaimDetailsDto">
+		update claim_details c set c.processId = #{processId} where c.id = #{id}
+	</update>
+	
+	<!-- 钱包充值提现 -->
+	<update id="moneypackeage" parameterType="java.util.Map">
+		update account a 
+		<set>
+			<if test="mark==1">
+				a.balance=a.balance+#{count}
+			</if>
+			<if test="mark==2">
+				a.balance=a.balance-#{count}
+			</if>
+			<if test="mark1!=null and mark1!=''">
+				a.balance=a.balance-#{count}
+			</if>
+		</set>
+		where a.ins_id=#{ins_id}
+	</update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

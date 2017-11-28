@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zl.dao.ActivitiDao">
+	
+	<!-- List<ClaimDetailsDto> listClaimDetailsDtoByProcessId(Map<String, Object> argsist) -->
+	<!-- 根据流程实例 id 查询理赔详情列表 -->
+	<resultMap type="com.zl.dto.ClaimDetailsDto" id="noDealWith">
+		<id property="id" column="id"/>
+		<result property="pol_id" column="pol_id"/>
+		<result property="expirationDate" column="expirationDate"/>
+		<result property="pro_name" column="pro_name"/>
+		<result property="b_coverage" column="b_coverage"/>
+		<result property="sales_id" column="sales_id"/>
+		<result property="sales_name" column="sales_name"/>
+		<result property="processId" column="processId"/>
+		<result property="sales_dicision" column="sales_dicision"/>
+		<result property="mgr_dicision" column="mgr_dicision"/>
+		<result property="admin_dicision" column="admin_dicision"/>
+		<result property="b_state_id" column="b_state_id"/>
+		<result property="b_state" column="b_state"/>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<result property="ass_name" column="ass_name"/>
+			<result property="ass_id_card" column="ass_id_card"/>
+			<result property="ass_tel" column="ass_tel"/>
+		</association>
+	</resultMap>
+	<select id="listClaimDetailsDtoByProcessId" parameterType="java.util.HashMap"
+		resultMap="noDealWith">
+		SELECT 
+			c.id,
+			c.pol_id,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) expirationDate,
+			pr.pro_name, 
+			p.b_coverage,
+			e.id sales_id,
+			e.emp_name sales_name,
+			c.processId,
+			c.sales_dicision,
+			c.mgr_dicision,
+			c.admin_dicision,
+			p.b_state_id,
+			s.state_name b_state
+		FROM 
+			claim_details c 
+		LEFT JOIN 
+			assurer a 
+		ON 
+			c.ass_id = a.id 
+		LEFT JOIN 
+			policy p 
+		ON 
+			c.pol_id = p.id
+		LEFT JOIN 
+			product pr 
+		ON 
+			p.b_pro_id = pr.id 
+		LEFT JOIN 
+			employee e 
+		ON 
+			c.sales_id = e.id 
+		left join
+			state s
+		on
+			p.b_state_id = s.id
+		<where>
+			c.processId in
+			<foreach collection="processIdList" open="(" close=")" item="id" separator=",">
+				#{id}
+			</foreach>
+			<if test="pageUtil.query.pol_id != null and pageUtil.query.pol_id != ''">
+				and c.pol_id like CONCAT(CONCAT('%',#{pageUtil.query.pol_id}),'%')
+			</if>
+			<if test="pageUtil.query.pro_name != null and pageUtil.query.pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%',#{pageUtil.query.pro_name}),'%')
+			</if>
+			<if test="pageUtil.query.startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{pageUtil.query.startDate}
+			</if>
+			<if test="pageUtil.query.endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{pageUtil.query.endDate}
+			</if>
+		</where>
+		LIMIT #{pageUtil.startNum}, #{pageUtil.pageSize}
+	</select>
+	
+	<!-- int getClaimDetailsCount(Map<String, Object> args) -->
+	<!-- 查询未处理的业务数 -->
+	<select id="getClaimDetailsCount" parameterType="java.util.HashMap" resultType="java.lang.Integer">
+		select count(1) from claim_details c LEFT JOIN policy p on c.pol_id = p.id
+		left join product pr on p.b_pro_id = pr.id
+		<where>
+			c.id in 
+			<foreach collection="claimDetailsId" open="(" close=")" item="id" separator=",">
+				#{id}
+			</foreach>
+				<if test="pageUtil.query.pol_id != null and pageUtil.query.pol_id != ''">
+					and c.pol_id like CONCAT(CONCAT('%',#{pageUtil.query.pol_id}),'%')
+				</if>
+				<if test="pageUtil.query.pro_name != null and pageUtil.query.pro_name != ''">
+					and pr.pro_name like CONCAT(CONCAT('%',#{pageUtil.query.pro_name}),'%')
+				</if>
+				<if test="pageUtil.query.startDate != null">
+					and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{pageUtil.query.startDate}
+				</if>
+				<if test="pageUtil.query.endDate != null">
+					and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{pageUtil.query.endDate}
+				</if>
+		</where>
+	</select>
+	
+	<!-- int updateClaimDetailsResult(Map<String, Object> args) -->
+	<!-- 更新理赔结果 -->
+	<update id="updateClaimDetailsResult" parameterType="java.util.HashMap">
+		update policy p set b_state_id = #{state} where id = #{pol_id}
+	</update>
+	
+</mapper>

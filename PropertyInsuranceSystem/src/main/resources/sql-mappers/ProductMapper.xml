@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- 王松 2017/11/6 -->
+<mapper namespace="com.zl.dao.ProductDao">
+
+ 
+<resultMap type="com.zl.dto.ProductDto" id="ProducMap">
+	<result column="id" property="id"/>
+	<result column="pro_del_mark" property="pro_del_mark"/>
+	<result column="pro_name" property="pro_name"/>
+	<result column="pro_pic" property="pro_pic"/>
+	<result column="pro_program" property="pro_program"/>
+	<result column="pro_scope" property="pro_scope"/>
+	<result column="pro_time" property="pro_time"/>
+	<result column="pro_add_by" property="pro_add_by"/>
+	<result column="pro_add_date" property="pro_add_date"/>
+	<result column="pro_del_by" property="pro_del_by"/>
+	<result column="pro_del_date" property="pro_del_date"/>
+	<result column="pro_mod_by" property="pro_mod_by"/>
+	<result column="pro_mod_date" property="pro_mod_date"/>
+	<collection property="pro_quote" ofType="com.zl.dto.QuoteDto">
+		<id property="id" column="qid"/>
+		<result property="pro_id" column="pro_id"/>
+		<result property="insured_amount" column="insured_amount"/>
+		<result property="coverage" column="coverage"/>
+	</collection>
+</resultMap>
+
+
+	<!-- 分页查询产品列表 -->
+	 
+	<select id="listProducts" parameterType="com.zl.util.PageUtil" resultMap="ProducMap">
+		SELECT
+			t.id,
+			t.pro_del_mark,
+			t.pro_name,
+			t.pro_pic,
+			t.pro_program,
+			t.pro_scope,
+			t.pro_time,
+			t.pro_add_by,
+			t.pro_add_date,
+			t.pro_del_by,
+			t.pro_del_date,
+			t.pro_mod_by,
+			t.pro_mod_date,
+			t.qid,
+			t.pro_id,
+			t.insured_amount,
+			t.coverage
+		FROM
+		(
+			SELECT
+			    p.id,
+			    p.pro_del_mark,
+			    p.pro_name,
+			    p.pro_pic,
+			    p.pro_program,
+			    p.pro_scope,
+			    p.pro_time,
+			    p.pro_add_by,
+			    p.pro_add_date,
+			    p.pro_del_by,
+			    p.pro_del_date,
+			    p.pro_mod_by,
+			    p.pro_mod_date,
+			    q.id qid,
+			    q.pro_id,
+			    q.insured_amount,
+			    q.coverage
+			FROM
+			    (
+			        SELECT
+			            *
+			        FROM
+			            product 
+			        LIMIT #{startNum},6
+			    ) p,
+			    quote q
+			WHERE
+                 q.pro_id = p.id
+            and
+			     p.pro_del_mark = 1
+				<if test="query!=null">
+					<if test="query.pro_name!=null and query.pro_name!=''">
+						and p.pro_name like concat(concat('%',#{query.pro_name}),'%')
+					</if>
+				</if>
+					
+		) t
+		
+	</select>
+	
+	<!-- 查询一共有多少条数据 -->
+	<select id="countProducts" parameterType="com.zl.util.Query" resultType="java.lang.Integer">
+		select count(1) from Product
+			<where>
+				<if test="pro_name!=null and pro_name!=''">
+					and pro_name like concat(concat('%',#{pro_name}),'%')
+				</if>
+			and 
+				pro_del_mark = 1
+			</where>
+	</select>
+	
+	<!-- 根据ID查询单个产品详情 -->
+	<select id="getProduct" parameterType="java.lang.String" resultMap="ProducMap">
+		SELECT
+				p.id,
+				p.pro_del_mark,
+				p.pro_name,
+				p.pro_pic,
+				p.pro_program,
+				p.pro_scope,
+				p.pro_time,
+				p.pro_add_by,
+				p.pro_add_date,
+				p.pro_del_by,
+				p.pro_del_date,
+				p.pro_mod_by,
+				p.pro_mod_date,
+				q.id qid,
+				q.pro_id,
+				q.insured_amount,
+				q.coverage
+		FROM
+			product p
+		left join
+			quote q
+		on
+			q.pro_id = p.id
+        where 
+        	p.id=#{id}
+	</select>
+	
+	<!-- 查看产品评价 -->
+	<select id="selectComment" parameterType="java.lang.String" resultType="com.zl.dto.CommentDto">
+		SELECT
+			id,
+			product_id,
+			ins_id,
+			content,
+			com_date,
+			grade
+		FROM
+			Comment
+		WHERE
+			product_id = #{product_id}
+	</select>
+	
+	<!-- 查询产品品论的数量 -->
+        <select id="selectNumber" parameterType="java.lang.String" resultType="java.lang.Integer">
+            select count(1) from Comment where product_id = #{product_id} and grade in (4,5)
+        </select>
+        
+        <!-- 查询产品品论的数量 -->
+        <select id="selectNumberOne" parameterType="java.lang.String" resultType="java.lang.Integer">
+            select count(1) from Comment where product_id = #{product_id} and grade in (2,3)
+        </select>
+        
+        <!-- 查询产品品论的数量 -->
+        <select id="selectNumberTwo" parameterType="java.lang.String" resultType="java.lang.Integer">
+            select count(1) from Comment where product_id = #{product_id} and grade=1
+        </select>
+        
+	<!-- 添加产品 -->
+	  <insert id="insertProduct" parameterType="com.zl.dto.ProductDto">
+		<selectKey keyProperty="id" order="BEFORE" resultType="java.lang.String">
+			select UUID() from dual
+		</selectKey>
+		insert into product(
+			   id,
+			   pro_name,
+			   pro_program,
+			   pro_scope,
+			   pro_time, 
+			   pro_add_by, 
+			   pro_add_date,
+			   pro_del_mark,
+			   pro_pic
+			   )
+			values(
+			   	#{id},
+			   	#{pro_name},
+			   	#{pro_program},
+			   	#{pro_scope},
+			   	#{pro_time}, 
+			    #{pro_add_by},
+			   	sysdate(),
+			   	1,
+			   	#{pro_pic}
+			   	)
+	</insert>
+   <!-- 添加报价 -->
+   <insert id="insertQuote" parameterType="java.util.ArrayList">
+   		insert into quote
+   		<foreach collection="list" item="item" separator="union">
+   			select UUID(),#{item.insured_amount},#{item.coverage},#{item.pro_id} from dual
+   		</foreach> 
+   </insert>
+	
+	<!-- 修改产品 -->
+	<!-- 参数必须和取得值对应 -->
+	<update id="updateProduct" parameterType="java.util.HashMap">
+	update
+		product,quote
+    <set>
+    	<if test="productDto.pro_mod_by!=null">
+    		product.pro_mod_by=#{productDto.pro_mod_by},
+    	</if>
+    	<if test="productDto.pro_program != null">
+			product.pro_program=#{productDto.pro_program},
+		</if>
+		<if test="1==1">
+			product.pro_mod_date=sysdate(),
+		</if>
+		<if test="productDto.pro_time != null">
+			product.pro_time=#{productDto.pro_time},
+		</if>
+   		<if test="productDto.pro_scope != null">
+   			product.pro_scope=#{productDto.pro_scope},
+		</if>
+   		<if test="productDto.pro_pic != null">
+   			product.pro_pic=#{productDto.pro_pic},
+		</if>
+   		<if test="insured_amount !=null">
+   			quote.insured_amount=#{insured_amount},
+		</if>
+   		<if test="coverage !=null">
+   			quote.coverage=#{coverage}
+		</if>
+   	</set>	
+   	where product.id=#{productDto.id} and product.id=quote.pro_id;
+	</update>
+	
+	<!-- 删除产品 -->
+	<update id="deleteProduct" parameterType="java.util.HashMap">
+		update product set
+				pro_del_mark=0,
+				pro_del_date=sysdate(),
+		        pro_del_by=#{emp.id}
+		where id in
+		<foreach collection="list" item="product_id" open="(" close=")" separator=",">
+			#{product_id}
+		</foreach>
+	</update>
+	
+	
+</mapper>

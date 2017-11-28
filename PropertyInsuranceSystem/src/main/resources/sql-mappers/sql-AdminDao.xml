@@ -1,0 +1,481 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zl.dao.AdminDao">
+
+	<!-- public ClaimDetailsDto getClaimDetailsById(String id) -->
+	<!-- 根据 ID 查询理赔详情 -->
+	<resultMap type="com.zl.dto.ClaimDetailsDto" id="ClaimDetails">
+		<id property="id" column="id"/>
+		<result property="pol_id" column="pol_id"/>
+		<result property="address" column="address"/>
+		<result property="accident_date" column="accident_date"/>
+		<result property="accident_des" column="accident_des"/>
+		<result property="sales_id" column="sales_id"/>
+		<result property="sales_name" column="sales_name"/>
+		<result property="sales_idea" column="sales_idea"/>
+		<result property="sales_dicision" column="sales_dicision"/>
+		<result property="sales_date" column="sales_date"/>
+		<result property="mgr_id" column="mgr_id"/>
+		<result property="mgr_name" column="mgr_name"/>
+		<result property="mgr_idea" column="mgr_idea"/>
+		<result property="mgr_dicision" column="mgr_dicision"/>
+		<result property="mgr_date" column="mgr_date"/>
+		<result property="admin_id" column="admin_id"/>
+		<result property="admin_name" column="admin_name"/>
+		<result property="admin_idea" column="admin_idea"/>
+		<result property="admin_dicision" column="admin_dicision"/>
+		<result property="admin_date" column="admin_date"/>
+		<result property="b_coverage" column="b_coverage"/>
+		<result property="b_insured_amount" column="b_insured_amount"/>
+		<result property="pro_name" column="pro_name"/>
+		<result property="processId" column="processId"/>
+		<association property="insureDto" javaType="com.zl.dto.InsureDto">
+			<id property="id" column="ins_id"/>
+			<result property="ins_name" column="ins_name"/>
+			<result property="ins_tel" column="ins_tel"/>
+			<result property="ins_email" column="ins_email"/>
+		</association>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<id property="id" column="ass_id"/>
+			<result property="ass_name" column="ass_name"/>
+			<result property="ass_tel" column="ass_tel"/>
+			<result property="ass_email" column="ass_email"/>
+		</association>
+		<collection property="picList" ofType="java.lang.String">
+			<result column="pics" property="picList"/>
+		</collection>
+	</resultMap>
+	<select id="getClaimDetailsById" parameterType="java.lang.String"
+		resultMap="ClaimDetails">
+			SELECT 
+				t1.id,
+				t1.ins_id,
+				t1.ass_id,
+				t1.pol_id,
+				t1.address,
+				t1.accident_date,
+				t1.accident_des,
+				pic.pics,
+				t1.sales_id,
+				t1.sales_name,
+				t1.sales_idea,
+				t1.sales_dicision,
+				t1.sales_date,
+				t1.mgr_id,
+				t1.mgr_name,
+				t1.mgr_idea,
+				t1.mgr_dicision,
+				t1.mgr_date,
+				t1.admin_id,
+				t1.admin_name,
+				t1.admin_idea,
+				t1.admin_dicision,
+				t1.admin_date,
+				t1.processId,
+				p.b_coverage,
+				p.b_insured_amount,
+				pd.pro_name,
+				i.ins_name,
+				i.ins_tel,
+				i.ins_email,
+				a.ass_name,
+				a.ass_tel, 
+				a.ass_email
+			FROM 
+			(
+				SELECT 
+					t2.id,
+					t2.ins_id,
+					t2.ass_id,
+					t2.pol_id,
+					t2.address,
+					t2.accident_date,
+					t2.accident_des,
+					t2.pic_path,
+					t2.sales_id,
+					t2.sales_name,
+					t2.sales_idea,
+					t2.sales_dicision,
+					t2.sales_date,
+					t2.mgr_id,
+					t2.mgr_name,
+					t2.mgr_idea,
+					t2.mgr_dicision,
+					t2.mgr_date,
+					t2.admin_id,
+					e.emp_name admin_name,
+					t2.admin_idea,
+					t2.admin_dicision,
+					t2.admin_date,
+					t2.processId
+				FROM 
+				(
+					SELECT
+						t3.id,
+						t3.ins_id,
+						t3.ass_id,
+						t3.pol_id,
+						t3.address,
+						t3.accident_date,
+						t3.accident_des,
+						t3.pic_path,
+						t3.sales_id,
+						t3.sales_name,
+						t3.sales_idea,
+						t3.sales_dicision,
+						t3.sales_date,
+						t3.mgr_id,
+						e1.emp_name mgr_name,
+						t3.mgr_idea,
+						t3.mgr_dicision,
+						t3.mgr_date,
+						t3.admin_id,
+						t3.admin_idea,
+						t3.admin_dicision,
+						t3.admin_date,
+						t3.processId
+					FROM
+					(
+						SELECT 
+							c.id,
+							c.ins_id,
+							c.ass_id,
+							c.pol_id,
+							c.address,
+							c.accident_date,
+							c.accident_des,
+							c.pic_path,
+							c.sales_id,
+							e2.emp_name sales_name,
+							c.sales_idea,
+							c.sales_dicision,
+							c.sales_date,
+							c.mgr_id,
+							c.mgr_idea,
+							c.mgr_dicision,
+							c.mgr_date,
+							c.admin_id,
+							c.admin_idea,
+							c.admin_dicision,
+							c.admin_date,
+							c.processId
+						FROM
+							claim_details c
+						LEFT JOIN
+							employee e2
+						ON
+							c.sales_id = e2.id
+					)t3
+						 
+					LEFT JOIN
+						employee e1
+					ON
+						t3.mgr_id = e1.id
+				) t2
+					
+				LEFT JOIN 
+					employee e
+				ON 
+					t2.admin_id = e.id
+			) t1
+			LEFT JOIN 
+				policy p 
+			ON 
+				t1.pol_id = p.id 
+			LEFT JOIN 
+				product pd 
+			ON 
+				p.b_pro_id = pd.id 
+			LEFT JOIN 
+				insure i 
+			ON 
+				t1.ins_id = i.id
+			LEFT JOIN 
+				assurer a 
+			ON 
+				t1.ass_id = a.id
+			LEFT JOIN 
+				pic_property pic 
+			ON 
+				t1.pol_id = pic.ins_id
+			WHERE
+				t1.id = #{id}
+	</select>
+	
+	<!-- public int updateClaimDetails(ClaimDetailsDto claimDetailsDto) -->
+	<!-- 管理员审核理赔 -->
+	<update id="updateClaimDetails" parameterType="com.zl.dto.ClaimDetailsDto">
+		update claim_details
+		<set>
+			admin_id = #{admin_id},
+			admin_idea = #{admin_idea},
+			admin_dicision = #{admin_dicision},
+			admin_date = now(),
+			state = #{state}
+		</set>
+		WHERE
+			id = #{id}
+	</update>
+	
+	<!-- public List<ClaimDetailsDto> listClaimDetailsNoDealWith(PageUtil pageUtil) -->
+	<!-- 查询未审核的理赔列表 -->
+	<resultMap type="com.zl.dto.ClaimDetailsDto" id="noDealWith">
+		<id property="id" column="id"/>
+		<result property="pol_id" column="pol_id"/>
+		<result property="expirationDate" column="expirationDate"/>
+		<result property="pro_name" column="pro_name"/>
+		<result property="b_coverage" column="b_coverage"/>
+		<result property="mgr_name" column="emp_name"/>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<result property="ass_name" column="ass_name"/>
+			<result property="ass_id_card" column="ass_id_card"/>
+			<result property="ass_tel" column="ass_tel"/>
+		</association>
+	</resultMap>
+	<select id="listClaimDetailsNoDealWith" parameterType="com.zl.util.PageUtil"
+		resultMap="noDealWith">
+		SELECT 
+			c.id,
+			c.pol_id,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) expirationDate,
+			pr.pro_name, 
+			p.b_coverage,
+			e.emp_name  
+		FROM 
+			claim_details c 
+		LEFT JOIN 
+			assurer a 
+		ON 
+			c.ass_id = a.id 
+		LEFT JOIN 
+			policy p 
+		ON 
+			c.pol_id = p.id
+		LEFT JOIN 
+			product pr 
+		ON 
+			p.b_pro_id = pr.id 
+		LEFT JOIN 
+			employee e 
+		ON 
+			c.mgr_id = e.id 
+		<where>
+			<if test="query.pol_id != null and query.pol_id != ''">
+				and c.pol_id like CONCAT(CONCAT('%',#{query.pol_id}),'%')
+			</if>
+			<if test="query.pro_name != null and query.pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%',#{query.pro_name}),'%')
+			</if>
+			<if test="query.startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{query.startDate}
+			</if>
+			<if test="query.endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{query.endDate}
+			</if>
+			and c.state = 7
+		</where>
+		LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	<!-- public List<ClaimDetailsDto> listClaimDetailsHaveDealtWith(PageUtil pageUtil) -->
+	<!-- 查询已经处理的理赔 -->
+	<resultMap type="com.zl.dto.ClaimDetailsDto" id="haveDealtWith">
+		<id property="id" column="id"/>
+		<result property="pol_id" column="pol_id"/>
+		<result property="expirationDate" column="expirationDate"/>
+		<result property="pro_name" column="pro_name"/>
+		<result property="b_coverage" column="b_coverage"/>
+		<result property="mgr_name" column="emp_name"/>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<result property="ass_name" column="ass_name"/>
+			<result property="ass_id_card" column="ass_id_card"/>
+			<result property="ass_tel" column="ass_tel"/>
+		</association>
+	</resultMap>
+	<select id="listClaimDetailsHaveDealtWith" parameterType="com.zl.util.PageUtil"
+		resultMap="haveDealtWith">
+		SELECT 
+			c.id,
+			c.pol_id,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) expirationDate,
+			pr.pro_name, 
+			p.b_coverage,
+			e.emp_name  
+		FROM 
+			claim_details c 
+		LEFT JOIN 
+			assurer a 
+		ON 
+			c.ass_id = a.id 
+		LEFT JOIN 
+			policy p 
+		ON 
+			c.pol_id = p.id
+		LEFT JOIN 
+			product pr 
+		ON 
+			p.b_pro_id = pr.id 
+		LEFT JOIN 
+			employee e 
+		ON 
+			c.mgr_id = e.id 
+		<where>
+			<if test="query.pol_id != null and query.pol_id != ''">
+				and c.pol_id like CONCAT(CONCAT('%', #{query.pol_id}),'%')
+			</if>
+			<if test="query.pro_name != null and query.pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%', #{query.pro_name}),'%')
+			</if>
+			<if test="query.startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{query.startDate}
+			</if>
+			<if test="query.endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{query.endDate}
+			</if>
+			and c.admin_dicision != ''
+		</where>
+		LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	<!-- public int getRowsForNoDealWith(Query query) -->
+	<!-- 查询未处理的 理赔信息总条数 -->
+	<select id="getRowsForNoDealWith" parameterType="com.zl.util.Query" 
+		resultType="java.lang.Integer">
+		select count(1) from claim_details c LEFT JOIN policy p
+		ON c.pol_id = p.id LEFT JOIN product pr
+		ON p.b_pro_id = pr.id
+		<where>
+			<if test="pol_id != null and pol_id != ''">
+				and c.id like CONCAT(CONCAT('%', #{pol_id}),'%')
+			</if>
+			<if test="pro_name != null and pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%', #{pro_name}),'%')
+			</if>
+			<if test="startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{startDate,jdbcType=TIMESTAMP}
+			</if>
+			<if test="endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{endDate,jdbcType=TIMESTAMP}
+			</if>
+			and c.state = 7
+		</where>
+	</select>
+	
+	<!-- public int getRowsForHaveDealtWith(Query query) -->
+	<!-- 查询已经处理的理赔的总条数 -->
+	<select id="getRowsForHaveDealtWith" parameterType="com.zl.util.Query"
+		resultType="java.lang.Integer">
+		select count(1) from claim_details c LEFT JOIN policy p
+		ON c.pol_id = p.id LEFT JOIN product pr
+		ON p.b_pro_id = pr.id
+		<where>
+			<if test="pol_id != null and pol_id != ''">
+				and c.id like CONCAT(CONCAT('%', #{pol_id}),'%')
+			</if>
+			<if test="pro_name != null and pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%', #{pro_name}),'%')
+			</if>
+			<if test="startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{startDate}
+			</if>
+			<if test="endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{endDate}
+			</if>
+			and c.admin_dicision != ''
+		</where>
+	</select>
+	
+	<!-- public List<ClaimDetailsDto> listAllClaimDetails(PageUtil pageUtil) -->
+	<!-- 查询所有理赔信息 -->
+	<resultMap type="com.zl.dto.ClaimDetailsDto" id="allClaimDetails">
+		<id property="id" column="id"/>
+		<result property="pol_id" column="pol_id"/>
+		<result property="expirationDate" column="expirationDate"/>
+		<result property="pro_name" column="pro_name"/>
+		<result property="b_coverage" column="b_coverage"/>
+		<result property="mgr_name" column="emp_name"/>
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<result property="ass_name" column="ass_name"/>
+			<result property="ass_id_card" column="ass_id_card"/>
+			<result property="ass_tel" column="ass_tel"/>
+		</association>
+	</resultMap>
+	<select id="listAllClaimDetails" parameterType="com.zl.util.PageUtil"
+		resultMap="allClaimDetails">
+		SELECT 
+			c.id,
+			c.pol_id,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) expirationDate,
+			pr.pro_name, 
+			p.b_coverage,
+			e.emp_name  
+		FROM 
+			claim_details c 
+		LEFT JOIN 
+			assurer a 
+		ON 
+			c.ass_id = a.id 
+		LEFT JOIN 
+			policy p 
+		ON 
+			c.pol_id = p.id
+		LEFT JOIN 
+			product pr 
+		ON 
+			p.b_pro_id = pr.id 
+		LEFT JOIN 
+			employee e 
+		ON 
+			c.mgr_id = e.id 
+		<where>
+			<if test="query.pol_id != null and query.pol_id != ''">
+				and c.id like CONCAT(CONCAT('%', #{query.pol_id}),'%')
+			</if>
+			<if test="query.pro_name != null and query.pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%', #{query.pro_name}),'%')
+			</if>
+			<if test="query.startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{query.startDate}
+			</if>
+			<if test="query.endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{query.endDate}
+			</if>
+			and c.state in (7,8)
+		</where>
+		LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	<!-- int getAllRows(Query query) -->
+	<!-- 查询所有理赔信息的总条数 -->
+	<select id="getAllRows" parameterType="com.zl.util.Query" 
+		resultType="java.lang.Integer">
+		select count(1) from claim_details c LEFT JOIN policy p
+		ON c.pol_id = p.id LEFT JOIN product pr
+		ON p.b_pro_id = pr.id
+		<where>
+			<if test="pol_id != null and pol_id != ''">
+				and c.id like CONCAT(CONCAT('%', #{pol_id}),'%')
+			</if>
+			<if test="pro_name != null and pro_name != ''">
+				and pr.pro_name like CONCAT(CONCAT('%', #{pro_name}),'%')
+			</if>
+			<if test="startDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) >= #{startDate}
+			</if>
+			<if test="endDate != null">
+				and DATE_ADD(p.b_effect_date,INTERVAL pr.pro_time YEAR) &lt;= #{endDate}
+			</if>
+			and c.state in (7,8)
+		</where>
+	</select>
+</mapper>

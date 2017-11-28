@@ -1,0 +1,22 @@
+## 环境选择 以及 前后缀
+spring:
+  profiles:
+    active: dev
+  mvc:
+    view:
+      prefix: /jsp/
+      suffix: .jsp
+  activiti:
+    process-definition-location-prefix:
+
+## 输出 sql
+logging:
+  level:
+    com:
+      zl:
+        dao: DEBUG
+
+## mybatis 自动起别名 以及 扫描 sql 映射文件
+mybatis:
+  type-aliases-package: com.zl.dto
+  mapper-locations: classpath:sql-mappers/*.xml

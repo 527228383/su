@@ -1,0 +1,595 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zl.dao.SalesDao">
+	<!-- 查询订单数量(待支付/待核实) -->
+	<select id="countOrdersByState" parameterType="com.zl.util.Query" resultType="java.lang.Integer">
+		select
+			count(1)
+		from
+			tbl_order d
+		left join
+			product pro
+		on
+			d.d_pro_id = pro.id
+		where
+			d.d_del_mark = 1
+		<if test="start_state_id!=null and start_state_id!=''">
+			and d.d_state_id >= #{start_state_id}
+		</if>
+		<if test="end_state_id!=null and end_state_id!=''">
+			and d.d_state_id &lt;= #{end_state_id}
+		</if>
+		<if test="order_id!=null and order_id!=''">
+			and d.id like concat(concat('%',#{order_id}),'%')
+		</if>
+		<if test="pro_name!=null and pro_name!=''">
+			and pro.pro_name like concat(concat('%',#{pro_name}),'%')
+		</if>
+		<if test="startDate!=null">
+			and d.d_add_date >= #{startDate}
+		</if>
+		<if test="endDate!=null">
+			and d.d_add_date &lt;= #{endDate}
+		</if>
+	</select>
+	<!-- 分页查询订单列表(待支付/待核实) -->
+	<select id="listOrders" parameterType="com.zl.util.PageUtil" resultMap="orderMap">
+		select
+			d.id,
+			d.d_add_date,
+			d.d_pay_date,
+			d.d_coverage,
+			d.d_insured_amount,
+			d.d_state_id,
+			i.id iid,
+			i.ins_name,
+			i.ins_id_card,
+			i.ins_tel,
+			i.ins_email,
+			i.ins_city,
+			c.city_name ins_city_name,
+			i.ins_pic,
+			a.id aid,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			a.ass_email,
+			a.ass_city,
+			c1.city_name ass_city_name,
+			p.id pid,
+			p.pro_name,
+			p.pro_program,
+			p.pro_scope,
+			p.pro_time
+		from
+			tbl_order d
+		left join
+			insure i
+		on
+			d.d_ins_id = i.id
+		left join
+			assurer a
+		on
+			d.d_ass_id = a.id
+		left join
+			product p
+		on
+			d.d_pro_id = p.id
+		left join
+			city c
+		on
+			i.ins_city=c.city_code
+		left join
+			city c1
+		on
+			a.ass_city=c1.city_code
+		where
+			d.d_del_mark = 1
+		<if test="query.start_state_id!=null and query.start_state_id!=''">
+			and d.d_state_id >= #{query.start_state_id}
+		</if>
+		<if test="query.end_state_id!=null and query.end_state_id!=''">
+			and d.d_state_id &lt;= #{query.end_state_id}
+		</if>
+		<if test="query.order_id!=null and query.order_id!=''">
+			and d.id like concat(concat('%',#{query.order_id}),'%')
+		</if>
+		<if test="query.pro_name!=null and query.pro_name!=''">
+			and p.pro_name like concat(concat('%',#{query.pro_name}),'%')
+		</if>
+		<if test="query.startDate!=null">
+			and d.d_add_date >= #{query.startDate}
+		</if>
+		<if test="query.endDate!=null">
+			and d.d_add_date &lt;= #{query.endDate}
+		</if>
+		order by d.d_add_date desc
+		limit #{startNum},#{pageSize}
+	</select>
+	<!-- 订单map -->
+	<resultMap type="com.zl.dto.OrderDto" id="orderMap">
+		<id column="id" property="id"/>
+		<result column="d_coverage" property="d_coverage"/>
+		<result column="d_insured_amount" property="d_insured_amount"/>
+		<result column="d_add_date" property="d_add_date"/>
+		<result column="d_pay_date" property="d_pay_date"/>
+		<result column="d_state_id" property="d_state_id"/>
+		<!-- 投保人(一对一关联b_ins_id) -->
+		<association property="insureDto" javaType="com.zl.dto.InsureDto">
+			<id column="iid" property="id"/>
+			<result column="ins_name" property="ins_name"/>
+			<result column="ins_id_card" property="ins_id_card"/>
+			<result column="ins_tel" property="ins_tel"/>
+			<result column="ins_email" property="ins_email"/>
+			<result column="ins_city" property="ins_city"/>
+			<result column="ins_city_name" property="ins_city_name"/>
+			<result column="ins_pic" property="ins_pic"/>
+		</association>
+		<!-- 被保人(一对一关联b_ass_id) -->
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<id column="aid" property="id"/>
+			<result column="ass_name" property="ass_name"/>
+			<result column="ass_id_card" property="ass_id_card"/>
+			<result column="ass_tel" property="ass_tel"/>
+			<result column="ass_email" property="ass_email"/>
+			<result column="ass_city" property="ass_city"/>
+			<result column="ass_city_name" property="ass_city_name"/>
+		</association>
+		<!-- 产品(一对一关联b_pro_id) -->
+		<association property="productDto" javaType="com.zl.dto.ProductDto">
+			<id column="pid" property="id"/>
+			<result column="pro_name" property="pro_name"/>
+			<result column="pro_program" property="pro_program"/>
+			<result column="pro_scope" property="pro_scope"/>
+			<result column="pro_time" property="pro_time"/>
+		</association>
+	</resultMap>
+	<!-- 查看订单详情 -->
+	<select id="getOrderById" parameterType="java.lang.String" resultMap="orderMap">
+		select
+			d.id,
+			d.d_add_date,
+			d.d_pay_date,
+			d.d_coverage,
+			d.d_insured_amount,
+			d.d_state_id,
+			i.id iid,
+			i.ins_name,
+			i.ins_id_card,
+			i.ins_tel,
+			i.ins_email,
+			i.ins_city,
+			c.city_name ins_city_name,
+			i.ins_pic,
+			a.id aid,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			a.ass_email,
+			a.ass_city,
+			c1.city_name ass_city_name,
+			p.id pid,
+			p.pro_name,
+			p.pro_program,
+			p.pro_scope,
+			p.pro_time
+		from
+			tbl_order d
+		left join
+			insure i
+		on
+			d.d_ins_id = i.id
+		left join
+			assurer a
+		on
+			d.d_ass_id = a.id
+		left join
+			product p
+		on
+			d.d_pro_id = p.id
+		left join
+			city c
+		on
+			i.ins_city=c.city_code
+		left join
+			city c1
+		on
+			a.ass_city=c1.city_code
+		where
+			d.id=#{id}
+	</select>
+	<!-- 插入待核实订单详情 -->
+	<insert id="insertCheckDetails" parameterType="com.zl.dto.CheckDetailDto">
+		insert into check_details(
+			id,
+			ins_id,
+			address,
+			sales_des,
+			sales_dicision,
+			sales_date
+		)
+		values(
+			UUID(),
+			#{ins_id},
+			#{address},
+			#{sales_des},
+			#{sales_dicision},
+			sysdate()
+		)
+	</insert>
+	<!-- 更改订单状态/删除 -->
+	<update id="updateOrderStateById">
+		update
+			tbl_order
+		<set>
+			<if test="state!=null and state!=''">
+				d_state_id = #{state},
+			</if>
+			<if test="del_mark!=null and del_mark!=''">
+				d_del_mark = #{del_mark}
+			</if>
+		</set>
+		where
+			id = #{id}
+	</update>
+	<!-- 添加多图 -->
+	<insert id="addPic">
+		insert into
+			pic_property(id,ins_id,pics)
+		<foreach collection="picList" item="pic" separator="union">
+			select UUID(),#{id},#{pic} from dual
+		</foreach>
+	</insert>
+	<!-- 业务员核保通过,将订单信息插入到保单 -->
+	<insert id="insertPolicyFromOrder" parameterType="java.lang.String">
+		insert into policy(
+			id,
+			b_ins_id,
+			b_ass_id,
+			b_pro_id,
+			b_effect_date,
+			b_coverage,
+			b_insured_amount,
+			b_state_id,
+			b_count,
+			b_com_mark
+			)
+		select
+			UUID(),
+			d_ins_id as b_ins_id,
+			d_ass_id as b_ass_id,
+			d_pro_id as b_pro_id,
+			sysdate(),
+			d_coverage as b_coverage,
+			d_insured_amount as b_insured_amount,
+			3,
+			0,
+			1
+		from
+			tbl_order d
+		where
+			d.id = #{id}
+	</insert>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<!-- 查询保单数量(生效中/待续保/待审核/业务员审核通过/经理审核通过/已驳回/已赔付) -->
+	<select id="countPolicysByState" parameterType="com.zl.util.Query" resultType="java.lang.Integer">
+		select
+			count(1)
+		from
+			policy p
+		left join
+			product pro
+		on
+			p.b_pro_id = pro.id
+		<where>
+			<if test="start_state_id!=null and start_state_id!=''">
+				and p.b_state_id >= #{start_state_id}
+			</if>
+			<if test="end_state_id!=null and end_state_id!=''">
+				and p.b_state_id &lt;= #{end_state_id}
+			</if>
+			<if test="pol_id!=null and pol_id!=''">
+				and p.id like concat(concat('%',#{pol_id}),'%')
+			</if>
+			<if test="pro_name!=null and pro_name!=''">
+				and pro.pro_name like concat(concat('%',#{pro_name}),'%')
+			</if>
+			<if test="startDate!=null">
+				and date_add(p.b_effect_date,interval pro.pro_time year) >= #{startDate}
+			</if>
+			<if test="endDate!=null">
+				and date_add(p.b_effect_date,interval pro.pro_time year) &lt;= #{endDate}
+			</if>
+		</where>
+	</select>
+	<!-- 分页查询保单列表(生效中/待续保/待审核/业务员审核通过/经理审核通过/已驳回/已赔付) -->
+	<select id="listPolicys" parameterType="com.zl.util.PageUtil" resultMap="policyMap">
+		select
+			b.id,
+			b.b_coverage,
+			b.b_insured_amount,
+			b.b_effect_date,
+			date_add(b.b_effect_date,interval p.pro_time year) b_lose_date,
+			b.b_state_id,
+			s.state_name b_state,
+			b.b_count,
+			i.id iid,
+			i.ins_name,
+			i.ins_id_card,
+			i.ins_tel,
+			i.ins_email,
+			i.ins_city,
+			c.city_name ins_city_name,
+			i.ins_pic,
+			a.id aid,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			a.ass_email,
+			a.ass_city,
+			c1.city_name ass_city_name,
+			p.id pid,
+			p.pro_name,
+			p.pro_program,
+			p.pro_scope,
+			p.pro_time
+		from
+			policy b
+		left join
+			insure i
+		on
+			b.b_ins_id = i.id
+		left join
+			assurer a
+		on
+			b.b_ass_id = a.id
+		left join
+			product p
+		on
+			b.b_pro_id = p.id
+		left join
+			state s
+		on
+			b.b_state_id = s.id
+		left join
+			city c
+		on
+			i.ins_city=c.city_code
+		left join
+			city c1
+		on
+			a.ass_city=c1.city_code
+		<where>
+			<if test="query.start_state_id!=null and query.start_state_id!=''">
+				and b.b_state_id >= #{query.start_state_id}
+			</if>
+			<if test="query.end_state_id!=null and query.end_state_id!=''">
+				and b.b_state_id &lt;= #{query.end_state_id}
+			</if>
+			<if test="query.pol_id!=null and query.pol_id!=''">
+				and b.id like concat(concat('%',#{query.pol_id}),'%')
+			</if>
+			<if test="query.pro_name!=null and query.pro_name!=''">
+				and p.pro_name like concat(concat('%',#{query.pro_name}),'%')
+			</if>
+			<if test="query.startDate!=null">
+				and date_add(b.b_effect_date,interval p.pro_time year) >= #{query.startDate}
+			</if>
+			<if test="query.endDate!=null">
+				and date_add(b.b_effect_date,interval p.pro_time year) &lt;= #{query.endDate}
+			</if>
+		</where>
+			order by b_lose_date asc
+			limit #{startNum},#{pageSize}
+	</select>
+	<!-- 保单map -->
+	<resultMap type="com.zl.dto.PolicyDto" id="policyMap">
+		<id column="id" property="id"/>
+		<result column="b_coverage" property="b_coverage"/>
+		<result column="b_insured_amount" property="b_insured_amount"/>
+		<result column="b_effect_date" property="b_effect_date"/>
+		<result column="b_lose_date" property="b_lose_date"/>
+		<result column="b_state_id" property="b_state_id"/>
+		<result column="b_state" property="b_state"/>
+		<result column="b_count" property="b_count"/>
+		<!-- 投保人(一对一关联b_ins_id) -->
+		<association property="insureDto" javaType="com.zl.dto.InsureDto">
+			<id column="iid" property="id"/>
+			<result column="ins_name" property="ins_name"/>
+			<result column="ins_id_card" property="ins_id_card"/>
+			<result column="ins_tel" property="ins_tel"/>
+			<result column="ins_email" property="ins_email"/>
+			<result column="ins_city" property="ins_city"/>
+			<result column="ins_city_name" property="ins_city_name"/>
+			<result column="ins_pic" property="ins_pic"/>
+		</association>
+		<!-- 被保人(一对一关联b_ass_id) -->
+		<association property="assurerDto" javaType="com.zl.dto.AssurerDto">
+			<id column="aid" property="id"/>
+			<result column="ass_name" property="ass_name"/>
+			<result column="ass_id_card" property="ass_id_card"/>
+			<result column="ass_tel" property="ass_tel"/>
+			<result column="ass_email" property="ass_email"/>
+			<result column="ass_city" property="ass_city"/>
+			<result column="ass_city_name" property="ass_city_name"/>
+		</association>
+		<!-- 产品(一对一关联b_pro_id) -->
+		<association property="productDto" javaType="com.zl.dto.ProductDto">
+			<id column="pid" property="id"/>
+			<result column="pro_name" property="pro_name"/>
+			<result column="pro_program" property="pro_program"/>
+			<result column="pro_scope" property="pro_scope"/>
+			<result column="pro_time" property="pro_time"/>
+		</association>
+	</resultMap>
+	<!-- 查看保单详情 -->
+	<select id="getPolicyById" parameterType="java.lang.String" resultMap="policyMap">
+		select
+			b.id,
+			b.b_coverage,
+			b.b_insured_amount,
+			b.b_effect_date,
+			date_add(b.b_effect_date,interval p.pro_time year) b_lose_date,
+			b.b_state_id,
+			s.state_name b_state,
+			b.b_count,
+			i.id iid,
+			i.ins_name,
+			i.ins_id_card,
+			i.ins_tel,
+			i.ins_email,
+			i.ins_city,
+			c.city_name ins_city_name,
+			i.ins_pic,
+			a.id aid,
+			a.ass_name,
+			a.ass_id_card,
+			a.ass_tel,
+			a.ass_email,
+			a.ass_city,
+			c1.city_name ass_city_name,
+			p.id pid,
+			p.pro_name,
+			p.pro_program,
+			p.pro_scope,
+			p.pro_time
+		from
+			policy b
+		left join
+			insure i
+		on
+			b.b_ins_id = i.id
+		left join
+			assurer a
+		on
+			b.b_ass_id = a.id
+		left join
+			product p
+		on
+			b.b_pro_id = p.id
+		left join
+			state s
+		on
+			b.b_state_id = s.id
+		left join
+			city c
+		on
+			i.ins_city=c.city_code
+		left join
+			city c1
+		on
+			a.ass_city=c1.city_code
+		where
+			b.id=#{id}
+	</select>
+	<!-- 更改保单状态 -->
+	<update id="updatePolicyStateById">
+		update
+			policy
+		set
+			b_state_id = #{state}
+		where
+			id = #{id}
+	</update>
+	<!-- 插入业务员处理的理赔详情 -->
+	<insert id="insertClaimDetails" parameterType="com.zl.dto.ClaimDetailsDto">
+		insert into claim_details(
+			id,
+			ins_id,
+			ass_id,
+			pol_id,
+			address,
+			accident_date,
+			accident_des,
+			sales_id,
+			sales_idea,
+			sales_dicision,
+			sales_date)
+		values(
+			UUID(),
+			#{insureDto.id},
+			#{assurerDto.id},
+			#{pol_id},
+			#{address},
+			#{accident_date},
+			#{accident_des},
+			#{sales_id},
+			#{sales_idea},
+			#{sales_dicision},
+			sysdate()
+			)
+	</insert>
+	
+	<!-- int updateClaimDetails(ClaimDetailsDto claimDetailsDto) -->
+	<!-- 添加理赔处理意见 -->
+	<update id="updateClaimDetails" parameterType="com.zl.dto.ClaimDetailsDto">
+		update claim_details c 
+		<set>
+			<if test="address != null and address != ''">
+				address = #{address},
+			</if>
+			<if test="accident_date != null">
+				accident_date = #{accident_date},
+			</if>
+			<if test="accident_des != null and accident_des != ''">
+				accident_des = #{accident_des},
+			</if>
+			<if test="sales_id != null and sales_id != ''">
+				sales_id = #{sales_id},
+			</if>
+			<if test="sales_idea != null and sales_idea != ''">
+				sales_idea = #{sales_idea},
+			</if>
+			<if test="sales_dicision != null and sales_dicision != ''">
+				sales_dicision = #{sales_dicision},
+			</if>
+			sales_date = sysdate(),
+			state = #{state}
+		</set>
+		where 
+			c.id = #{id}
+	</update>
+	<resultMap type="com.zl.dto.CheckDetailDto" id="checkDetailMap">
+		<id column="id" property="id"/>
+		<result column="ins_id" property="ins_id"/>
+		<result column="address" property="address"/>
+		<result column="sales_des" property="sales_des"/>
+		<result column="sales_dicision" property="sales_dicision"/>
+		<result column="sales_date" property="sales_date"/>
+		<collection property="picList" ofType="java.lang.String">
+			<result column="pics" property="picList"/>
+		</collection>
+	</resultMap>
+	<!-- 查看订单核实详情 -->
+	<select id="getCheckDetailDto" parameterType="java.lang.String" resultMap="checkDetailMap">
+		select
+			c.id,
+			c.ins_id,
+			c.address,
+			c.sales_des,
+			c.sales_dicision,
+			c.sales_date,
+			p.pics
+		from
+			check_details c
+		left join
+			pic_property p
+		on
+			c.ins_id = p.ins_id
+		where
+			c.ins_id = #{id}
+	</select>
+</mapper>

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="10 seconds">
+
+  <include resource="org/springframework/boot/logging/logback/base.xml" />
+  <!-- <include resource="org/springframework/boot/logging/logback/defaults.xml" /> -->
+   <!--  <include resource="org/springframework/boot/logging/logback/defaults.xml" /> -->
+    <!-- 配置开发环境日志 -->
+    <springProfile name="dev">
+    	<!-- 配置日志输出路径，也可以在yaml的logging.path中输出配置文件到任意位置 -->
+        <property name="LOG_PATH" value="D:/work" />
+        <!-- 配置日志文件名称 -->
+        <property name="LOG_FILE" value="sqfs-log.log" />
+        
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!-- 输出文件 -->
+            <file>${LOG_PATH}/${LOG_FILE}:-/tmp/${LOG_FILE}</file>
+            <!-- 输出样式 -->
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <!--日志文件输出的文件名-->  
+                <FileNamePattern>${LOG_PATH}/${LOG_FILE}.%d{yyyy-MM-dd}.log</FileNamePattern>
+                <!--日志文件保留数量-->
+                <MaxHistory>2</MaxHistory>
+            </rollingPolicy>
+            <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                <MaxFileSize>10MB</MaxFileSize>
+            </triggeringPolicy>
+        </appender>
+        <root level="info">
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
+    
+    <!-- 配置生产环境日志 -->
+    <springProfile name="prod">
+    	<!-- 配置日志输出路径，也可以在yaml的logging.path中输出配置文件到任意位置 -->
+        <property name="LOG_PATH" value="D:/work" />
+        <!-- 配置日志文件名称 -->
+        <property name="LOG_FILE" value="sqfs-log" />
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <!-- 输出文件 -->
+            <file>${LOG_PATH}/${LOG_FILE}:-/tmp/${LOG_FILE}</file>
+            <!-- 输出样式 -->
+            <encoder>
+                <pattern>${FILE_LOG_PATTERN}</pattern>
+            </encoder>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <!--日志文件输出的文件名-->
+                <FileNamePattern>${LOG_PATH}/${LOG_FILE}.%d{yyyy-MM-dd}.log</FileNamePattern>
+                <!--日志文件保留数量-->
+                <MaxHistory>2</MaxHistory>
+            </rollingPolicy>
+            <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                <MaxFileSize>10MB</MaxFileSize>
+            </triggeringPolicy>
+        </appender>
+        <root level="info">
+            <appender-ref ref="FILE" />
+        </root>
+    </springProfile>
+
+</configuration>
